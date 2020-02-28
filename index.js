@@ -1,7 +1,26 @@
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 
+
 app.use(express.json())
+
+morgan.token('body', (req) => {
+  return JSON.stringify(req.body)
+})
+
+const isPostMethod = (req, res) => req.method === 'POST'
+const postFormat = ':method :url :status :res[content-length] - :response-time ms :body'
+
+// log only 4xx and 5xx responses to console
+app.use(morgan('tiny', {
+  skip: isPostMethod
+}))
+
+app.use(morgan(postFormat, {
+  skip: (req, res) => !isPostMethod(req,res)
+}))
+
 
 let persons = [
         {
