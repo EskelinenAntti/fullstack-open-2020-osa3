@@ -26,6 +26,12 @@ let persons = [
         }
       ]
 
+const generateId = () => {
+  // Getting same id twice is as likely as guessing all 7 numbers correctly
+  // in lottery.
+  return Math.floor(Math.random() * 18643560)
+}
+
 app.get('/api/persons', (req, res) => {
   res.json(persons)
 })
@@ -35,7 +41,40 @@ app.get('/api/persons/:id', (req, res) => {
   const person = persons.find(person => person.id === id)
   if (person) {
     res.json(person)
+  } else {
+    res.status(404).end()
   }
+})
+
+app.post('/api/persons', (request, response) => {
+  const body = request.body
+
+  if (!body.name || !body.number) {
+    return response.status(400).json({
+      error: 'Both name and number must be defined.'
+    })
+  } else if (persons.map(person => person.name).find(name => name === body.name)) {
+    return response.status(400).json({
+      error: 'name must be unique'
+    })
+  }
+
+  const person = {
+    name: body.name,
+    number: body.number,
+    id: generateId(),
+  }
+
+  persons = persons.concat(person)
+
+  response.json(person)
+})
+
+app.delete('/api/persons/:id', (request, response) => {
+  const id = Number(request.params.id)
+  persons = persons.filter(person => person.id !== id)
+
+  response.status(204).end()
 })
 
 app.get('/info', (req, res) => {
