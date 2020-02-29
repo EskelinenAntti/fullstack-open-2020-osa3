@@ -12,7 +12,6 @@ morgan.token('body', (req) => {
 const isPostMethod = (req, res) => req.method === 'POST'
 const postFormat = ':method :url :status :res[content-length] - :response-time ms :body'
 
-// log only 4xx and 5xx responses to console
 app.use(morgan('tiny', {
   skip: isPostMethod
 }))
@@ -45,6 +44,8 @@ let persons = [
         }
       ]
 
+const isInvalidPerson = person => !person.name || !person.number
+
 const generateId = () => {
   // Getting same id twice is as likely as guessing all 7 numbers correctly
   // in lottery.
@@ -65,35 +66,55 @@ app.get('/api/persons/:id', (req, res) => {
   }
 })
 
-app.post('/api/persons', (request, response) => {
-  const body = request.body
+app.post('/api/persons', (req, res) => {
+  const person = req.body
 
-  if (!body.name || !body.number) {
-    return response.status(400).json({
+  if (isInvalidPerson(person)) {
+    return res.status(400).json({
       error: 'Both name and number must be defined.'
     })
-  } else if (persons.map(person => person.name).find(name => name === body.name)) {
-    return response.status(400).json({
+  } else if (persons.map(person => person.name).find(name => name === person.name)) {
+    return res.status(400).json({
       error: 'name must be unique'
     })
   }
 
-  const person = {
-    name: body.name,
-    number: body.number,
+  const createdPerson = {
+    name: person.name,
+    number: person.number,
     id: generateId(),
   }
 
-  persons = persons.concat(person)
+  persons = persons.concat(createdPerson)
 
-  response.json(person)
+  res.json(createdPerson)
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
+app.put('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id)
+  const payloadPerson = req.body
+
+  if (isInvalidPerson(req.body)) {
+    return res.status(400).json({
+      error: 'Both name and number must be defined.'
+    })
+  } else if (!persons.find(person => person.id === id)) {
+    return res.status(404).json({
+      error: 'person was not found'
+    })
+  }
+
+  const updatedPerson = {...payloadPerson}
+
+  persons = persons.map(person => person.id === id ? updatedPerson : person)
+  res.json(updatedPerson)
+})
+
+app.delete('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id)
   persons = persons.filter(person => person.id !== id)
 
-  response.status(204).end()
+  res.status(204).end()
 })
 
 app.get('/info', (req, res) => {
@@ -103,7 +124,7 @@ app.get('/info', (req, res) => {
   res.send(info)
 })
 
-const PORT = 3001
+const PORT = process.env.port || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
