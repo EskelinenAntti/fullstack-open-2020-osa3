@@ -7,9 +7,11 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:ui": "erase build && cd ../fullstack-open-2020/osa2/puhelinluettelo/ && npm run build --prod && @powershell copy -r ./build ../../../fullstack-heroku-app/",
+    "build:ui": "rm -rf build && cd ../fullstack-open-2020/osa2/puhelinluettelo/ && npm run build --prod && cp -r ./build ../../../fullstack-heroku-app/",
     "deploy": "git push heroku master",
-    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push && npm run deploy",
+    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && npm run deploy",
+    "win-build:ui": "rmdir build /S/Q && cd ..\\fullstack-open-2020\\osa2\\puhelinluettelo\\ && npm run build --prod && xcopy build ..\\..\\..\\fullstack-heroku-app\\ /E/F" ,
+    "win-deploy:full": "npm run win-build:ui && git add . && git commit -m uibuild && npm run deploy ",
     "logs:prod": "heroku logs --tail"
   },
   "author": "Antti Eskelinen",
