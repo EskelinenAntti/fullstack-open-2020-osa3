@@ -4,8 +4,6 @@ const express = require('express')
 const morgan = require('morgan')
 const Person = require('./models/person')
 
-
-
 const app = express()
 
 
@@ -16,7 +14,7 @@ morgan.token('body', (req) => {
   return JSON.stringify(req.body)
 })
 
-const isPostMethod = (req, res) => req.method === 'POST'
+const isPostMethod = (req) => req.method === 'POST'
 const postFormat = ':method :url :status :res[content-length] - :response-time ms :body'
 
 app.use(morgan('tiny', {
@@ -29,14 +27,14 @@ app.use(morgan(postFormat, {
 
 const isInvalid = person => !person.name || !person.number
 
-app.get('/api/persons', (req, res, next) => {
+app.get('/api/persons', (_req, res, next) => {
   Person.find({})
     .then(persons =>
       res.json(persons.map(person => person.toJSON()))
-      )
-      .catch(error =>
-        next(error)
-      )
+    )
+    .catch(error =>
+      next(error)
+    )
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -88,19 +86,19 @@ app.put('/api/persons/:id', (req, res, next) => {
   }
 
   Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true, context: 'query' })
-  .then(updatedPerson => {
-    if (updatedPerson) {
-      res.json(updatedPerson.toJSON())
-    } else {
-      res.status(404).end()
-    }
-  })
-  .catch(error => next(error))
+    .then(updatedPerson => {
+      if (updatedPerson) {
+        res.json(updatedPerson.toJSON())
+      } else {
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
-    .then(result => {
+    .then(() => {
       res.status(204).end()
     })
     .catch(error => next(error))
@@ -109,18 +107,18 @@ app.delete('/api/persons/:id', (req, res, next) => {
 app.get('/info', (req, res, next) => {
   Person.count({})
     .then(count => {
-        const info = `<p>Phonebook has info for ${count}</p>
-                      <p>${(new Date()).toString()}
-                      `
-        res.send(info)
-      })
+      const info = `<p>Phonebook has info for ${count}</p>
+                    <p>${(new Date()).toString()}
+                    `
+      res.send(info)
+    })
     .catch(error => next(error))
 })
 
 const errorHandler = (error, req, res, next) => {
   console.log(error.message)
 
-  if (error.name === 'CastError' && error.kind == 'ObjectId') {
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
     return res.status(400).send({ error: 'malformed id' })
   } else if (error.name ==='ValidationError') {
     return res.status(400).json({ error: error.message })
